@@ -18,7 +18,16 @@ class MainActivity : AppCompatActivity() {
                 dummyArticle("Java入門", "じろう")
             )
         }
-        listView.adapter = listAdapter
+        listView.apply {
+            adapter = listAdapter
+            setOnItemClickListener { adapterView, view, position, id ->
+                val article = listAdapter.articles[position]
+                ArticleActivity.intent(context, article).let {
+                    startActivity(it)
+                }
+            }
+        }
+
     }
 
     // ダミー記事を生成するメソッド
