@@ -2,9 +2,17 @@ package com.bubblegumfellow.kotlinstartbook
 
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
 import com.bubblegumfellow.kotlinstartbook.model.Article
 import com.bubblegumfellow.kotlinstartbook.model.User
+import com.google.gson.FieldNamingPolicy
+import com.google.gson.GsonBuilder
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
+import retrofit2.Retrofit
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
+import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,6 +36,28 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        val gson = GsonBuilder()
+            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+            .create()
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://qiita.com")
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+            .build()
+        val articleClient = retrofit.create(ArticleClient::class.java)
+
+        searchButton.setOnClickListener { _ ->
+            articleClient.search(queryEditText.text.toString())
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ articles ->
+                    queryEditText.text.clear()
+                    listAdapter.articles = articles
+                    listAdapter.notifyDataSetChanged()
+                }, {
+                    Toast.makeText(applicationContext, "Error!", Toast.LENGTH_LONG).show()
+                })
+        }
     }
 
     // ダミー記事を生成するメソッド
