@@ -8,6 +8,7 @@ import com.bubblegumfellow.kotlinstartbook.model.User
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.GsonBuilder
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import retrofit2.Retrofit
@@ -15,6 +16,8 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
+
+    private var disposable: Disposable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,7 +50,7 @@ class MainActivity : AppCompatActivity() {
         val articleClient = retrofit.create(ArticleClient::class.java)
 
         searchButton.setOnClickListener { _ ->
-            articleClient.search(queryEditText.text.toString())
+            disposable = articleClient.search(queryEditText.text.toString())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ articles ->
@@ -58,6 +61,13 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(applicationContext, "Error!", Toast.LENGTH_LONG).show()
                 })
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        disposable?.dispose()
+        disposable = null
     }
 
     // ダミー記事を生成するメソッド
